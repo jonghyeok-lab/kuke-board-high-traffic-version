@@ -4,6 +4,7 @@ import kuke.board.article.entity.Article;
 import kuke.board.article.repository.ArticleRepository;
 import kuke.board.article.service.request.ArticleCreateRequest;
 import kuke.board.article.service.request.ArticleUpdateRequest;
+import kuke.board.article.service.response.ArticlePageResponse;
 import kuke.board.article.service.response.ArticleResponse;
 import kuke.board.common.snowflake.Snowflake;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,18 @@ public class ArticleService {
 
     public ArticleResponse read(Long articleId) {
         return ArticleResponse.from(articleRepository.findById(articleId).orElseThrow());
+    }
+
+    public ArticlePageResponse readAll(Long boardId, Long page, Long limit, Long movablePageSize) {
+        return ArticlePageResponse.from(
+                articleRepository.findAll(boardId, PageCalculator.calculateOffset(page, limit), limit).stream()
+                        .map(ArticleResponse::from)
+                        .toList(),
+                articleRepository.count(
+                        boardId,
+                        PageCalculator.calculatePageLimit(page, limit, movablePageSize)
+                )
+        );
     }
 
     @Transactional
