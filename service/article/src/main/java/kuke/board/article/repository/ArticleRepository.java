@@ -23,7 +23,7 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
 
     @Query(
             value = "select count(*) " +
-                    "from (select board_id from article where board_id = :boardId order by article_id desc limit :limit) t "
+                    "from (select article_id from article where board_id = :boardId limit :limit) t "
             , nativeQuery = true
     )
     Long count(Long boardId, Long limit);

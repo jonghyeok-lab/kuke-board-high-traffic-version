@@ -2,6 +2,7 @@ package kuke.board.comment.controller;
 
 import kuke.board.comment.service.CommentService;
 import kuke.board.comment.service.request.CommentCreateRequest;
+import kuke.board.comment.service.response.CommentPageResponse;
 import kuke.board.comment.service.response.CommentResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -18,23 +19,24 @@ public class CommentController {
         return commentService.read(commentId);
     }
 
-//    @GetMapping("/v1/comments")
-//    public CommentPageResponse readAll(
-//            @RequestParam Long articleId,
-//            @RequestParam Long page,
-//            @RequestParam Long limit
-//    ) {
-//        return commentService.readAll(articleId, page, limit);
-//    }
+    @GetMapping("/v1/comments")
+    public CommentPageResponse readAll(
+            @RequestParam Long articleId,
+            @RequestParam Long page,
+            @RequestParam Long limit
+    ) {
+        return commentService.readAll(articleId, page, limit);
+    }
 
-//    @GetMapping("/v1/comments/infinite-scroll")
-//    public List<CommentResponse> readAllInfiniteScroll(
-//            @RequestParam Long articleId,
-//            @RequestParam Long limit,
-//            @RequestParam(required = false) Long lastCommentId
-//    ) {
-//        return commentService.readAllInfiniteScroll(articleId, limit, lastCommentId);
-//    }
+    @GetMapping("/v1/comments/infinite-scroll")
+    public List<CommentResponse> readAllInfiniteScroll(
+            @RequestParam Long articleId,
+            @RequestParam(required = false) Long lastParentCommentId,
+            @RequestParam(required = false) Long lastCommentId,
+            @RequestParam Long limit
+    ) {
+        return commentService.readAllInfiniteScroll(articleId, lastParentCommentId, lastCommentId, limit);
+    }
 
     @PostMapping("/v1/comments")
     public CommentResponse create(@RequestBody CommentCreateRequest request) {

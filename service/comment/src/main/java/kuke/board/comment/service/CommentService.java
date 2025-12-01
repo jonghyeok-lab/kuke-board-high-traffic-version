@@ -3,12 +3,14 @@ package kuke.board.comment.service;
 import kuke.board.comment.entity.Comment;
 import kuke.board.comment.repository.CommentRepository;
 import kuke.board.comment.service.request.CommentCreateRequest;
+import kuke.board.comment.service.response.CommentPageResponse;
 import kuke.board.comment.service.response.CommentResponse;
 import kuke.board.common.snowflake.Snowflake;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 import static java.util.function.Predicate.not;
@@ -36,7 +38,7 @@ public class CommentService {
 
     private Optional<Comment> findParent(CommentCreateRequest request) {
         Long parentCommentId = request.getParentCommentId();
-        if ( parentCommentId == null) {
+        if (parentCommentId == null) {
             return Optional.empty();
         }
         return commentRepository.findById(parentCommentId)
@@ -75,6 +77,31 @@ public class CommentService {
                     .filter(not(this::hasChildren))
                     .ifPresent(this::delete);
         }
+    }
+
+    public CommentPageResponse readAll(Long articleId, Long page, Long limit) {
+        return CommentPageResponse.of(
+                commentRepository.findAll(articleId, limit, (page - 1) * limit).stream()
+                        .map(CommentResponse::from)
+                        .toList(),
+                commentRepository.countBy(articleId, PageCalculator.calculatePageLimit(page, limit, 10L))
+        );
+    }
+
+    public List<CommentResponse> readAllInfiniteScroll(
+            Long articleId,
+            Long lastParentCommentId,
+            Long lastCommentId,
+            Long limit
+    ) {
+        if (lastParentCommentId == null || lastCommentId == null) {
+            return commentRepository.findAllInfiniteScroll(articleId, limit).stream()
+                    .map(CommentResponse::from)
+                    .toList();
+        }
+        return commentRepository.findAllInfiniteScroll(articleId, lastParentCommentId, lastCommentId, limit).stream()
+                .map(CommentResponse::from)
+                .toList();
     }
 
 }
