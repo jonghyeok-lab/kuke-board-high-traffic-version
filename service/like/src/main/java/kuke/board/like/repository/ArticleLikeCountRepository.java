@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.util.Optional;
 
-public interface ArticleCountRepository extends JpaRepository<ArticleLikeCount, Long> {
+public interface ArticleLikeCountRepository extends JpaRepository<ArticleLikeCount, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<ArticleLikeCount> findLockByArticleId(Long articleId);

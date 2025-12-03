@@ -2,6 +2,8 @@ package kuke.board.like.service;
 
 import kuke.board.common.snowflake.Snowflake;
 import kuke.board.like.entity.ArticleLike;
+import kuke.board.like.entity.ArticleLikeCount;
+import kuke.board.like.repository.ArticleLikeCountRepository;
 import kuke.board.like.repository.ArticleLikeRepository;
 import kuke.board.like.service.response.ArticleLikeResponse;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ArticleLikeService {
     private final ArticleLikeRepository articleLikeRepository;
+    private final ArticleLikeCountRepository articleLikeCountRepository;
+
     private Snowflake snowflake = new Snowflake();
 
     public ArticleLikeResponse read(Long articleId, Long userId) {
@@ -49,12 +53,23 @@ public class ArticleLikeService {
                         userId
                 )
         );
+
+        if (articleLikeCountRepository.increase(articleId) == 0) {
+            // 한 게시글에 첫 번째 좋아요가 동시에 2번 요청되는 경우는 고려 X
+            // -> 치명적인가? No,
+            articleLikeCountRepository.save(
+                    ArticleLikeCount.init(articleId, 1L)
+            );
+        }
     }
 
     @Transactional
     public void unlikePessimisticLock1(Long articleId, Long userId) {
         articleLikeRepository.findByArticleIdAndUserId(articleId, userId)
-                .ifPresent(articleLikeRepository::delete);
+                .ifPresent(articleLike -> {
+                    articleLikeRepository.delete(articleLike);
+                    articleLikeCountRepository.decrease(articleId);
+                });
     }
 
     /**
@@ -69,12 +84,23 @@ public class ArticleLikeService {
                         userId
                 )
         );
+
+        articleLikeCountRepository.findLockByArticleId(articleId)
+                .ifPresentOrElse(
+                        articleLikeCount -> articleLikeCount.increase(),
+                        () -> articleLikeCountRepository.save(
+                                ArticleLikeCount.init(articleId, 1L)
+                        )
+                );
     }
 
     @Transactional
     public void unlikePessimisticLock2(Long articleId, Long userId) {
         articleLikeRepository.findByArticleIdAndUserId(articleId, userId)
-                .ifPresent(articleLikeRepository::delete);
+                .ifPresent(articleLike -> {
+                    articleLikeRepository.delete(articleLike);
+                    articleLikeCountRepository.decrease(articleId);
+                });
     }
 
     /**
@@ -89,11 +115,21 @@ public class ArticleLikeService {
                         userId
                 )
         );
+
+        ArticleLikeCount articleLikeCount = articleLikeCountRepository.findById(articleId)
+                .orElseGet(() -> ArticleLikeCount.init(articleId, 0L));
+        articleLikeCount.increase();
+        articleLikeCountRepository.save(articleLikeCount);
     }
 
     @Transactional
     public void unlikeOptimisticLock1(Long articleId, Long userId) {
         articleLikeRepository.findByArticleIdAndUserId(articleId, userId)
-                .ifPresent(articleLikeRepository::delete);
+                .ifPresent(articleLike -> {
+                    articleLikeRepository.delete(articleLike);
+                    articleLikeCountRepository.findById(articleId)
+                            .ifPresent(ArticleLikeCount::decrease);
+                });
     }
 }
+
