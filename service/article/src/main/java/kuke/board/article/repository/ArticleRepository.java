@@ -19,7 +19,7 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
                     ") t left join article on t.article_id = article.article_id"
             , nativeQuery = true
     )
-    List<Article> findAll(Long boardId, Long offset, Long limit);
+    List<Article> findAll( Long boardId, Long offset, Long limit);
 
     @Query(
             value = "select count(*) " +
