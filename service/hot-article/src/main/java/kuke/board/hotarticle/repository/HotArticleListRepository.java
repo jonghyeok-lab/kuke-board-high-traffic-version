@@ -35,6 +35,10 @@ public class HotArticleListRepository {
         });
     }
 
+    public void remove(Long articleId, LocalDateTime time) {
+        redisTemplate.opsForZSet().remove(generateKey(time), String.valueOf(articleId));
+    }
+
     private String generateKey(LocalDateTime time) {
         return generateKey(TIME_FORMATTER.format(time));
     }
@@ -44,7 +48,7 @@ public class HotArticleListRepository {
     }
 
     public List<Long> readAll(String dataStr) {
-        return redisTemplate.opsForZSet()
+        return redisTemplate.opsForZSet() // sortedSet
                 .reverseRangeWithScores(generateKey(dataStr), 0, -1).stream()
                 .peek(tuple -> log.info("[HotArticleListRepository.readAll] articleId={}, score={}", tuple.getValue(), tuple.getScore()))
                 .map(ZSetOperations.TypedTuple::getValue)
