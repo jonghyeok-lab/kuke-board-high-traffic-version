@@ -8,14 +8,14 @@ import org.springframework.data.jpa.repository.Query;
 public interface BoardArticleCountRepository extends JpaRepository<BoardArticleCount, Long> {
 
     @Query(
-            value = "update board_article_count set article_count = article_count + 1 where :board_id",
+            value = "update board_article_count set article_count = article_count + 1 where :boardId",
             nativeQuery = true
     )
     @Modifying
     int increase(Long boardId);
 
     @Query(
-            value = "update board_article_count set article_count = article_count - 1 where :board_id",
+            value = "update board_article_count set article_count = article_count - 1 where :boardId",
             nativeQuery = true
     )
     @Modifying

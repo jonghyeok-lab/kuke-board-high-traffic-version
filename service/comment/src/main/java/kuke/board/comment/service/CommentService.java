@@ -5,6 +5,10 @@ import kuke.board.comment.repository.CommentRepository;
 import kuke.board.comment.service.request.CommentCreateRequest;
 import kuke.board.comment.service.response.CommentPageResponse;
 import kuke.board.comment.service.response.CommentResponse;
+import kuke.board.common.event.EventType;
+import kuke.board.common.event.payload.ArticleDeletedEventPayload;
+import kuke.board.common.event.payload.CommentCreatedEventPayload;
+import kuke.board.common.outboxmessagerelay.OutboxEventPublisher;
 import kuke.board.common.snowflake.Snowflake;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +24,7 @@ import static java.util.function.Predicate.not;
 public class CommentService {
     private final Snowflake snowflake = new Snowflake();
     private final CommentRepository commentRepository;
+    private final OutboxEventPublisher outboxEventPublisher;
 
     @Transactional
     public CommentResponse create(CommentCreateRequest request) {
@@ -32,6 +37,20 @@ public class CommentService {
                         request.getArticleId(),
                         request.getWriterId()
                 )
+        );
+
+        outboxEventPublisher.publish(
+                EventType.COMMENT_CREATED,
+                CommentCreatedEventPayload.builder()
+                        .commentId(comment.getCommentId())
+                        .articleId(comment.getArticleId())
+                        .content(comment.getContent())
+                        .writerId(comment.getWriterId())
+                        .createdAt(comment.getCreatedAt())
+                        .deleted(comment.getDeleted())
+//                        .boardArticleCount(count(comment.getBoardId()))
+                        .build(),
+                comment.getArticleId()
         );
         return CommentResponse.from(comment);
     }
